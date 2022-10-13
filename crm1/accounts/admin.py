@@ -10,3 +10,4 @@ class AuthorAdmin(admin.ModelAdmin):
 admin.site.register(Customer, AuthorAdmin)
 admin.site.register(Product, AuthorAdmin)
 admin.site.register(Order, AuthorAdmin)
+admin.site.register(Tag, AuthorAdmin)
