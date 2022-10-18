@@ -1,19 +1,62 @@
+from atexit import register
+from multiprocessing import context
 from django.shortcuts import render, redirect 
 from django.http import HttpResponse
 from django.forms import inlineformset_factory
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login, logout, authenticate 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 # Create your views here.
 from .models import *
-from .forms import OrderForm
+from .forms import OrderForm, CreateUserForm
 from .filters import OrderFilter
+#lets get formy
 
+def registerPage(request):
+	if request.user.is_authenticated:
+		return redirect('home')
+	else:
+		form = CreateUserForm(request)
+		if request.method == 'POST': 
+			form = UserForm(request.POST)
+			if form.isValid():
+				form.save()
+				user = form.cleaned_data.get('username')
+				messages.success(request, 'Accoutn was created for ' + user)
+				return redirect('login')
 
+		context = {'form': form,}
+		return render(request, 'accounts/register.html', context)
 
+def loginPage(request):
+	if request.user.is_authenticated:
+		return redirect('home')
+	else:
+		if request.method == 'POST': 
+			password=request.POST.get('password')
+			username=request.POST.get('username')
+
+			user = authenticate(request, username = username, password=password)
+			if user is not None:
+				login(request, user)
+				return redirect('home')
+			else:
+				messages.info(request, 'Username OR password is incorrect')
+		
+		context = { }
+		return render(request, 'accounts/login.html', context)
+
+def logoutUser(request):
+	logout(request)
+	return redirect('login')
+
+@login_required(login_url='login')
 def home(request):
 	orders = Order.objects.all()
 	customers = Customer.objects.all()
 
 	total_customers = customers.count()
-
 	total_orders = orders.count()
 	delivered = orders.filter(status='Delivered').count()
 	pending = orders.filter(status='Pending').count()
